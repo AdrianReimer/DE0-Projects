@@ -1,0 +1,16 @@
+
+State Machine - |LM75_I2C|state
+Name state.Processing state.StopState2 state.StopState state.ENDState state.Data2 state.Data state.Acknow_Master2 state.Acknow_Master state.Acknow2 state.Acknow state.readWrite state.Addressing state.Init_State 
+state.Init_State 0 0 0 0 0 0 0 0 0 0 0 0 0 
+state.Addressing 0 0 0 0 0 0 0 0 0 0 0 1 1 
+state.readWrite 0 0 0 0 0 0 0 0 0 0 1 0 1 
+state.Acknow 0 0 0 0 0 0 0 0 0 1 0 0 1 
+state.Acknow2 0 0 0 0 0 0 0 0 1 0 0 0 1 
+state.Acknow_Master 0 0 0 0 0 0 0 1 0 0 0 0 1 
+state.Acknow_Master2 0 0 0 0 0 0 1 0 0 0 0 0 1 
+state.Data 0 0 0 0 0 1 0 0 0 0 0 0 1 
+state.Data2 0 0 0 0 1 0 0 0 0 0 0 0 1 
+state.ENDState 0 0 0 1 0 0 0 0 0 0 0 0 1 
+state.StopState 0 0 1 0 0 0 0 0 0 0 0 0 1 
+state.StopState2 0 1 0 0 0 0 0 0 0 0 0 0 1 
+state.Processing 1 0 0 0 0 0 0 0 0 0 0 0 1 

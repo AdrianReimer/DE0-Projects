@@ -1,0 +1,236 @@
+LIBRARY ieee;
+
+USE ieee.std_logic_1164.ALL;
+USE ieee.std_logic_arith.ALL;
+USE ieee.std_logic_signed.ALL;
+	
+ENTITY SevenSegment IS
+	PORT(
+		--inputs
+		HEX_INPUT : in std_logic_vector(3 downto 0);
+		--outputs
+		HEX_OUTPUT : out std_logic_vector(6 downto 0)
+	);
+END SevenSegment;
+	
+	
+ARCHITECTURE arch2 OF SevenSegment IS
+BEGIN
+	PROCESS(HEX_INPUT)
+	BEGIN
+		CASE HEX_INPUT is
+		WHEN "0000" =>
+			HEX_OUTPUT <= "1000000";
+		WHEN "0001" =>
+			HEX_OUTPUT <= "1111001";
+		WHEN "0010" =>
+			HEX_OUTPUT <= "0100100";
+		WHEN "0011" =>
+			HEX_OUTPUT <= "0110000";
+		WHEN "0100" =>
+			HEX_OUTPUT <= "0011001";
+		WHEN "0101" =>
+			HEX_OUTPUT <= "0010010";
+		WHEN "0110" =>
+			HEX_OUTPUT <= "0000010";
+		WHEN "0111" =>
+			HEX_OUTPUT <= "1111000";
+		WHEN "1000" =>
+			HEX_OUTPUT <= "0000000";
+		WHEN "1001" =>
+			HEX_OUTPUT <= "0011000";
+		WHEN OTHERS =>
+			HEX_OUTPUT <= "1111110";
+		END CASE;
+	END PROCESS;
+END arch2;
+
+LIBRARY ieee;
+
+USE ieee.std_logic_1164.ALL;
+USE ieee.std_logic_arith.ALL;
+USE ieee.std_logic_signed.ALL;
+
+ENTITY LM75_I2C IS 
+	PORT(	
+		-- inputs
+		CLOCK_50 : in std_logic;
+		BUTTON : in std_logic;
+		reset : in std_logic;
+		-- outputs
+		i2c_clk : out std_logic;
+		HEX1_DEC_POINT : out std_logic := '0';
+		HEX0_D : out std_logic_vector(6 downto 0);
+		HEX1_D : out std_logic_vector(6 downto 0);
+		HEX2_D : out std_logic_vector(6 downto 0);
+		HEX3_D : out std_logic_vector(6 downto 0);
+		LEDG : out std_logic_vector(9 downto 0);
+		-- both
+		i2c_sda : inout std_logic
+	);
+END LM75_I2C;
+	
+ARCHITECTURE arch OF LM75_I2C IS
+	CONSTANT CLOCK_FREQ : integer := 400; -- Clock frequency factor
+	SIGNAL counter : integer := 0; -- counter for Clock frequency
+	TYPE State_type is (Init_State, Addressing, readWrite, Acknow, Acknow2, Acknow_Master, Acknow_Master2, Data, Data2, EndState, StopState, StopState2, Processing); -- i2c states
+	SIGNAL state : State_type; -- current State 
+	SIGNAL idx : integer := 0; -- index used for looping and Adr+Data Array Fields
+	SIGNAL clock_state: std_logic; -- state of the clock --> High / Low
+	TYPE Adr_array_t is array (6 downto 0) of std_logic; -- 7 Bit Array type of std_logic
+	SIGNAL adr_array : Adr_array_t; -- Adress Array
+	SIGNAL data_array : std_logic_vector(0 to 15); -- 16 Bit Data Array
+	SIGNAL processing_data : integer; -- converted int of Data
+	SIGNAL comma,c : integer := 0; -- new comma, old comma
+	SIGNAL ones,o : integer := 0; -- new ones, old ones
+	SIGNAL tens,t : integer := 0; -- new tens, old tens
+	SIGNAL hundreds,h : integer := 0; -- new hundreds, old hundreds
+	SIGNAL processing_data_half : integer := 0; -- the real temperature in degrees celsius
+	SIGNAL clock_phase :integer Range 0 to 3; -- current phase of the clock | 0/risingEdge/1/fallingEdge
+	
+	COMPONENT SevenSegment is
+		PORT(
+			HEX_INPUT : in std_logic_vector(3 downto 0);
+			HEX_OUTPUT : out std_logic_vector(6 downto 0)
+		);
+	END COMPONENT;
+
+BEGIN
+	Adr_array(6 downto 0) <= "1101001"; -- temperature addressing
+	PROCESS (CLOCK_50)
+	VARIABLE cp : integer Range 0 to 3;
+		BEGIN
+		if (BUTTON = '0') then -- Reset / (Hold) -> lets you hold the temp value
+			State <= Init_State;
+			i2c_sda <= '1';
+			counter <= 0;
+			clock_state <= '1';
+			clock_phase <= 0;
+		elsif rising_edge(CLOCK_50) then
+			counter <= counter +1;
+			if( counter = CLOCK_FREQ) then  -- divider: 4
+				counter <= 0;
+				if (clock_phase = 1 or clock_phase = 3) then -- high/low
+					clock_state <=  not clock_state;
+				end if;
+				if (clock_phase = 3) then -- low
+					cp := 0;
+				else
+					cp := clock_phase + 1;
+				end if;
+				clock_phase <= cp;
+				-- State Machine
+				case state is
+					when Init_State => -- set sda to 0 and i2c_clk will be set to '1' --> Start condition
+						if (cp = 1) then 
+							i2c_sda <= '0';
+							state <= Addressing;
+							idx <= 0;
+						end if;
+					when Addressing => -- sends the adr_data over sda to temp.sensor --> requests temp. value
+						if (cp = 3) then 
+							if (Adr_array(idx) = '1') then 
+								i2c_sda <= 'Z';
+							else 
+								i2c_sda <= '0';
+							end if;
+						end if;
+						if (cp = 0) then
+							idx <= idx + 1;
+							if (idx = 6) then
+								state <=  readWrite;
+								idx <= 0;
+							end if;
+						end if;
+					when readWrite => -- Set value if you want to read or write
+						if (cp = 3) then
+							i2c_sda <= 'Z';
+						end if;
+						if (cp = 0) then
+							state <= Acknow;
+						end if;
+					when Acknow => -- Set value if you want to read or write | guarantees 'Z' at right time 
+						if (cp = 3) then
+							i2c_sda <= 'Z';
+						end if;
+						if (cp = 0) then
+							state <=  Acknow2;
+						end if;
+					when Acknow2 => -- at cp=high and sda=0 --> ready to read data
+						if (cp = 1 and i2c_sda = '0') then
+							state <= Data;
+							idx <= 0;
+						end if;				
+					when Data => -- reads the temp value that the sensor sends at the right time
+						if (cp = 1) then
+							data_array(idx) <= i2c_sda; -- reads data shortly after cp=high
+							idx <= idx + 1;
+							if (idx = 7) then
+								state <= Acknow_Master;
+							end if;
+						end if;
+					when Acknow_Master => -- if cp=low then set sda=low
+						if (cp = 3) then
+							i2c_sda <= '0';
+							state <= Acknow_Master2;
+						end if;
+					when Acknow_Master2 => -- then set sda to 'Z'
+						if (cp = 3) then
+							i2c_sda <= 'Z';
+							State <= Data2;
+						end if;
+					when Data2 => -- read data2 at cp=high
+						if (cp = 1) then
+							data_array(idx) <= i2c_sda;
+							idx <= idx + 1;
+							if (idx = 15) then
+								state <= EndState;
+							end if;
+						end if;
+					when EndState => -- end reading data --> set sda to 'Z'
+						if (cp = 3) then
+							i2c_sda <= 'Z';
+							state <= StopState;
+						end if;
+					when StopState => -- stop condition --> when cp=low set sda=low
+						if (cp = 3) then
+							i2c_sda <= '0';
+							state <= StopState2;
+							idx <= 0;
+						end if;
+					when StopState2 => -- when cp=high set sda to 'Z' --> for 3000 cycles (wait some time for next statemachine cycle)
+						if (cp = 1) then
+							i2c_sda <= 'Z';
+							if (idx = 3000) then
+								state <= Processing;
+								idx <= 0;
+							else 
+								idx <= idx + 1;
+							end if;
+						end if;
+					when Processing => -- processes the temperature data we read
+						processing_data <= conv_integer(unsigned(data_array(0 to 8)));
+						c <= comma;
+						o <= ones;
+						t <= tens;
+						h <= hundreds;
+						state <= init_state;
+					when others => -- need to define when others
+				end case;
+			end if;
+		end if;
+	END PROCESS;
+	processing_data_half <= ((processing_data * 10)/2); -- integer rep. data of temp. sensor * 10 (to switch to integer range) and devide by 2 | 205 --> 20.5 C 
+	hundreds <= ((processing_data_half / 1000) mod 10); -- processing hundreds value
+	tens <= ((processing_data_half / 100) mod 10); -- processing tens value
+	ones <= ((processing_data_half / 10) mod 10); -- processing ones value
+	comma <= processing_data_half mod 10; -- processing comma value
+	
+	map0: SevenSegment PORT MAP(conv_std_logic_vector(c,4), HEX0_D); -- set HEX0 Segment
+	map1: SevenSegment PORT MAP(conv_std_logic_vector(o,4), HEX1_D); -- set HEX1 Segment
+	map2: SevenSegment PORT MAP(conv_std_logic_vector(t,4), HEX2_D); -- set HEX2 Segment
+	map3: SevenSegment PORT MAP(conv_std_logic_vector(h,4), HEX3_D); -- set HEX3 Segment
+
+	LEDG(9 downto 0) <= '0' & Data_array(0) & Data_array(1) & Data_array(2) & Data_array(3) & Data_array(4) & Data_array(5) & Data_array(6) & Data_array(7) & Data_array(8); -- Led representation of Data_array
+	i2c_clk <= clock_state;
+END arch;
