@@ -1,0 +1,69 @@
+LIBRARY ieee;
+
+USE ieee.std_logic_1164.ALL;
+USE ieee.std_logic_arith.ALL;
+USE ieee.std_logic_signed.ALL;
+	
+ENTITY SevenSegment IS
+	PORT(
+		--inputs
+		HEX_INPUT : in std_logic_vector(3 downto 0);
+		--outputs
+		HEX_OUTPUT : out std_logic_vector(6 downto 0)
+	);
+END SevenSegment;
+	
+	
+ARCHITECTURE arch2 OF SevenSegment IS
+BEGIN
+	PROCESS(HEX_INPUT)
+	BEGIN
+		CASE HEX_INPUT is
+		WHEN "0000" =>
+			HEX_OUTPUT <= "1000000";
+		WHEN "0001" =>
+			HEX_OUTPUT <= "1111001";
+		WHEN "0010" =>
+			HEX_OUTPUT <= "0100100";
+		WHEN "0011" =>
+			HEX_OUTPUT <= "0110000";
+		WHEN "0100" =>
+			HEX_OUTPUT <= "0011001";
+		WHEN "0101" =>
+			HEX_OUTPUT <= "0010010";
+		WHEN "0110" =>
+			HEX_OUTPUT <= "0000010";
+		WHEN "0111" =>
+			HEX_OUTPUT <= "1111000";
+		WHEN "1000" =>
+			HEX_OUTPUT <= "0000000";
+		WHEN "1001" =>
+			HEX_OUTPUT <= "0011000";
+		WHEN OTHERS =>
+			HEX_OUTPUT <= "1111110";
+		END CASE;
+	END PROCESS;
+END arch2;
+
+LIBRARY ieee;
+
+USE ieee.std_logic_1164.ALL;
+USE ieee.std_logic_arith.ALL;
+USE ieee.std_logic_signed.ALL;
+
+ENTITY UART IS 
+	PORT(	
+		-- inputs
+		CLOCK_50 : in std_logic;
+		UART_RX1 : in std_logic;
+		UART_RX2 : in std_logic;
+		-- outputs
+		UART_TX1 : out std_logic;
+		UART_TX2 : out std_logic;
+		UART_CLK : out std_logic;
+		HEX0_D : out std_logic_vector(6 downto 0);
+		HEX1_D : out std_logic_vector(6 downto 0);
+		HEX2_D : out std_logic_vector(6 downto 0);
+		HEX3_D : out std_logic_vector(6 downto 0);
+	);
+END UART;
