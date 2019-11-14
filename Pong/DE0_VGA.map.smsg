@@ -1,0 +1,1 @@
+Warning (10268): Verilog HDL information at DE0_VGA_Test.v(134): always construct contains both blocking and non-blocking assignments
