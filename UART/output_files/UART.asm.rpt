@@ -1,5 +1,5 @@
 Assembler report for UART
-Thu Nov 14 20:02:13 2019
+Sat Nov 16 22:55:51 2019
 Quartus II 64-Bit Version 13.0.1 Build 232 06/12/2013 Service Pack 1 SJ Web Edition
 
 
@@ -38,7 +38,7 @@ applicable agreement for further details.
 +---------------------------------------------------------------+
 ; Assembler Summary                                             ;
 +-----------------------+---------------------------------------+
-; Assembler Status      ; Successful - Thu Nov 14 20:02:13 2019 ;
+; Assembler Status      ; Successful - Sat Nov 16 22:55:51 2019 ;
 ; Revision Name         ; UART                                  ;
 ; Top-level Entity Name ; UART                                  ;
 ; Family                ; Cyclone III                           ;
@@ -103,8 +103,8 @@ applicable agreement for further details.
 ; Option         ; Setting                                       ;
 +----------------+-----------------------------------------------+
 ; Device         ; EP3C16F484C6                                  ;
-; JTAG usercode  ; 0x001381A0                                    ;
-; Checksum       ; 0x001381A0                                    ;
+; JTAG usercode  ; 0x001689F9                                    ;
+; Checksum       ; 0x001689F9                                    ;
 +----------------+-----------------------------------------------+
 
 
@@ -114,13 +114,13 @@ applicable agreement for further details.
 Info: *******************************************************************
 Info: Running Quartus II 64-Bit Assembler
     Info: Version 13.0.1 Build 232 06/12/2013 Service Pack 1 SJ Web Edition
-    Info: Processing started: Thu Nov 14 20:02:12 2019
+    Info: Processing started: Sat Nov 16 22:55:50 2019
 Info: Command: quartus_asm --read_settings_files=off --write_settings_files=off UART -c UART
 Info (115031): Writing out detailed assembly data for power analysis
 Info (115030): Assembler is generating device programming files
 Info: Quartus II 64-Bit Assembler was successful. 0 errors, 0 warnings
-    Info: Peak virtual memory: 4576 megabytes
-    Info: Processing ended: Thu Nov 14 20:02:13 2019
+    Info: Peak virtual memory: 4568 megabytes
+    Info: Processing ended: Sat Nov 16 22:55:51 2019
     Info: Elapsed time: 00:00:01
     Info: Total CPU time (on all processors): 00:00:01
 
